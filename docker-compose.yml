@@ -42,7 +42,6 @@ services:
     # Spark with N workers
     spark-master:
         image: bitnami/spark:3.2.1
-        #user: root # Run container as root container: https://docs.bitnami.com/tutorials/work-with-non-root-containers/
         hostname: spark
         networks:
             - default_net
@@ -56,10 +55,10 @@ services:
             - ./spark/app:/usr/local/spark/app # Scripts (same path in airflow and spark)
             - ./spark/resources:/usr/local/spark/resources # Resources (same path in airflow and spark)
         ports:
-            - "8081:8080"
+            - "8081:8080"  
             - "7077:7077"
 
-    spark-worker-1:
+    spark-worker:
         image: bitnami/spark:3.2.1
         #user: root
         networks:
@@ -67,8 +66,8 @@ services:
         environment:
             - SPARK_MODE=worker
             - SPARK_MASTER_URL=spark://spark:7077
-            - SPARK_WORKER_MEMORY=2G
-            - SPARK_WORKER_CORES=2
+            - SPARK_WORKER_MEMORY=1G
+            - SPARK_WORKER_CORES=1
             - SPARK_RPC_AUTHENTICATION_ENABLED=no
             - SPARK_RPC_ENCRYPTION_ENABLED=no
             - SPARK_LOCAL_STORAGE_ENCRYPTION_ENABLED=no
@@ -76,36 +75,36 @@ services:
         volumes:
             - ./spark/app:/usr/local/spark/app # Scripts (same path in airflow and spark)
             - ./spark/resources:/usr/local/spark/resources # Resources (same path in airflow and spark)
-
-    spark-worker-2:
-        image: bitnami/spark:3.2.1
-        #user: root
-        networks:
-            - default_net
-        environment:
-            - SPARK_MODE=worker
-            - SPARK_MASTER_URL=spark://spark:7077
-            - SPARK_WORKER_MEMORY=2G
-            - SPARK_WORKER_CORES=2
-            - SPARK_RPC_AUTHENTICATION_ENABLED=no
-            - SPARK_RPC_ENCRYPTION_ENABLED=no
-            - SPARK_LOCAL_STORAGE_ENCRYPTION_ENABLED=no
-            - SPARK_SSL_ENABLED=no
-        volumes:
-            - ./spark/app:/usr/local/spark/app # Scripts (same path in airflow and spark)
-            - ./spark/resources:/usr/local/spark/resources # Resources (same path in airflow and spark)
-
-    # Jupyter Notebooks
-    jupyter-pyspark:
-        image: jupyter/pyspark-notebook:spark-3.2.1 # pyspark
-        #image: jupyter/all-spark-notebook:spark-3.2.1 # scala
-        #image: jupyter/datascience-notebook:latest # julia 
-        networks:
-            - default_net
-        ports:
-          - "8888:8888"
-        volumes:
-          - ./notebooks:/home/jovyan/work/notebooks/
 
 networks:
     default_net:
+
+    # spark-worker-2:
+    #     image: apache/spark:3.2.1
+    #     #user: root
+    #     networks:
+    #         - default_net
+    #     environment:
+    #         - SPARK_MODE=worker
+    #         - SPARK_MASTER_URL=spark://spark:7077
+    #         - SPARK_WORKER_MEMORY=2G
+    #         - SPARK_WORKER_CORES=2
+    #         - SPARK_RPC_AUTHENTICATION_ENABLED=no
+    #         - SPARK_RPC_ENCRYPTION_ENABLED=no
+    #         - SPARK_LOCAL_STORAGE_ENCRYPTION_ENABLED=no
+    #         - SPARK_SSL_ENABLED=no
+    #     volumes:
+    #         - ./spark/app:/usr/local/spark/app # Scripts (same path in airflow and spark)
+    #         - ./spark/resources:/usr/local/spark/resources # Resources (same path in airflow and spark)
+
+    # Jupyter Notebooks
+    # jupyter-pyspark:
+    #     image: jupyter/pyspark-notebook:spark-3.2.1 # pyspark
+    #     #image: jupyter/all-spark-notebook:spark-3.2.1 # scala
+    #     #image: jupyter/datascience-notebook:latest # julia 
+    #     networks:
+    #         - default_net
+    #     ports:
+    #       - "8888:8888"
+    #     volumes:
+    #       - ./notebooks:/home/jovyan/work/notebooks/
