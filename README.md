@@ -1,25 +1,25 @@
 # docker-spark-fcse
 
+
 1. Clone project
 - mkdir airflow-spark-fcse
 - cd airflow-spark-fcse
 - git clone https://github.com/jovanvelkovski/airflow-spark-fcse
 
+### NOTE: The settings are for MacOS. If you are using Windows, open "Dockerfile" located in the "airflow" directory, and change the code on line 100 to be: ENV JAVA_HOME /usr/lib/jvm/java-8-openjdk-amd64
+
 2. Build airflow docker
 - cd airflow-spark-fcse/airflow
 - docker build --rm -t docker-airflow2:latest .
 
-3. Setup the sandbox
+3. Launch containers
 - cd ..
-- cp -R sandbox/. ../sandbox
-
-4. Launch containers
 - docker-compose -f docker-compose.yml up -d
 
-5. Create a test user for airflow
+4. Create a test user for airflow
 - docker-compose run airflow-webserver airflow users create --role Admin --username admin --email admin --firstname admin --lastname admin --password admin
 
-6. Edit connection from Airflow to Spark
+5. Edit connection from Airflow to Spark
 Go to Airflow UI > Admin > Edit connections
 Edit spark_default entry:
     Connection Type: Spark
