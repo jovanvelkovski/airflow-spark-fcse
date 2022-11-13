@@ -4,7 +4,7 @@
 # BASED ON: https://github.com/pyjaime/docker-airflow-spark
 
 # stretch debian version allows JAVA JDK 8
-FROM python:3.7-stretch
+FROM python:3.8
 LABEL maintainer=jovanvelkovski
 
 # Never prompts the user for choices on installation/configuration of packages
@@ -26,6 +26,11 @@ ENV LANG en_US.UTF-8
 ENV LC_ALL en_US.UTF-8
 ENV LC_CTYPE en_US.UTF-8
 ENV LC_MESSAGES en_US.UTF-8
+
+
+RUN apt-get update
+RUN apt-get install -yqq python3-pip
+RUN pip install numpy
 
 COPY requirements.txt /requirements.txt
 
@@ -97,7 +102,7 @@ RUN apt-get update && \
     javac -version
 
 # Setup JAVA_HOME 
-ENV JAVA_HOME /usr/lib/jvm/java-8-openjdk-arm64
+ENV JAVA_HOME /usr/lib/jvm/java-8-openjdk-amd64
 RUN export JAVA_HOME
 
 ## Finished JAVA installation

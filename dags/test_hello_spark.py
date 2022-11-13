@@ -10,7 +10,12 @@ spark_master = "spark://spark:7077"
 conf = {
     "spark.master" : spark_master,
     "spark.submit.deployMode" : "client",
-    "spark.network.timeout" : "300s"
+    "spark.network.timeout" : "300s",
+    # "spark.yarn.executor.memoryOverhead" : 600
+    "spark.executor.memory" : "512m",
+    "spark.driver.memory" : "512m",
+    # "spark.default.parallelism" : 100
+    "spark.executor.memoryOverhead" : "1g",
 }
 spark_app_name = "Spark Hello World"
 mini_sparkify_event_data = "/usr/local/spark/resources/data/mini_sparkify_event_data.json"

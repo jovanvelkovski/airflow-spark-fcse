@@ -7,3 +7,4 @@ SQLAlchemy
 wtforms
 psycopg2-binary
 seaborn
+numpy
