@@ -42,7 +42,7 @@ services:
 
     # Spark with N workers
     spark-master:
-        image: bitnami/spark:3.2.1
+        image: bitnami/spark:3.3.1
         hostname: spark
         networks:
             - default_net
@@ -61,7 +61,7 @@ services:
             - "7077:7077"
 
     spark-worker-1:
-        image: bitnami/spark:3.2.1
+        image: bitnami/spark:3.3.1
         user: root
         networks:
             - default_net
@@ -81,7 +81,7 @@ services:
             - ./spark-data:/usr/local/airflow/spark-data
 
     spark-worker-2:
-        image: bitnami/spark:3.2.1
+        image: bitnami/spark:3.3.1
         user: root
         networks:
             - default_net
