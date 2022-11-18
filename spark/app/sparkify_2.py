@@ -18,6 +18,7 @@ FROM sparkify_events
 GROUP BY userIdIndex
 """)
 churn.createOrReplaceTempView("churn")
+churn.write.mode("overwrite").parquet("/usr/local/airflow/spark-data/churn.parquet")
 
 churn_rate = churn.filter(churn.label == 1).count() / churn.count()
 

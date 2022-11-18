@@ -6,17 +6,13 @@ from airflow.utils.dates import days_ago
 
 conf = {
     "spark.master" : "spark://spark:7077",
-    # "spark.submit.deployMode" : "client",
     "spark.network.timeout" : "300s",
-    # "spark.yarn.executor.memoryOverhead" : 600
     "spark.executor.memory" : "512m",
     "spark.driver.memory" : "512m",
-    # "spark.default.parallelism" : 100
     "spark.executor.memoryOverhead" : "1g",
 }
 spark_app_name = "Spark Hello World"
 mini_sparkify_event_data = "/usr/local/spark/resources/data/mini_sparkify_event_data.json"
-
 args = {
     'owner': 'Airflow',
 }
@@ -60,11 +56,22 @@ with DAG(
         dag=dag
     )
 
+    feature_engineering = SparkSubmitOperator(
+        task_id="feature_engineering",
+        application="/usr/local/spark/app/sparkify_3.py",
+        name=spark_app_name,
+        conn_id="spark_default",
+        verbose=1,
+        conf=conf,
+        dag=dag
+    )
+
     end = DummyOperator(task_id="end", dag=dag)
 
     start  >> \
     load_and_clean_dataset >> \
     waiting_for_file >> \
     exploratory_data_analysis >> \
+    feature_engineering >> \
     end
     
