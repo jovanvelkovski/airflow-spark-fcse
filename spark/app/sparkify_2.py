@@ -6,19 +6,13 @@ plt.rcParams["figure.dpi"] = 140
 spark = SparkSession.builder.appName("Sparkify").getOrCreate()
 
 sparkify_events_data = "/usr/local/airflow/spark-data/sparkify_events.parquet"
+churn_data = "/usr/local/airflow/spark-data/churn.parquet"
 
 df = spark.read.parquet(sparkify_events_data)
-df.createOrReplaceTempView("sparkify_events")
+churn = spark.read.parquet(churn_data)
 
-churn = spark.sql("""
-SELECT 
-    userIdIndex, 
-    CAST(SUM(IF(page = 'Cancellation Confirmation', 1, 0)) >= 1 AS INT) AS label 
-FROM sparkify_events
-GROUP BY userIdIndex
-""")
+df.createOrReplaceTempView("sparkify_events")
 churn.createOrReplaceTempView("churn")
-churn.write.mode("overwrite").parquet("/usr/local/airflow/spark-data/churn.parquet")
 
 churn_rate = churn.filter(churn.label == 1).count() / churn.count()
 

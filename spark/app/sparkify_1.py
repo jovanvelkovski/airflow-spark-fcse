@@ -79,3 +79,12 @@ WHERE ts >= max_ts - 7*24*60*60*1000
 """)
 
 last_week_df.write.mode("overwrite").parquet("/usr/local/airflow/spark-data/last_week_events.parquet")
+
+churn = spark.sql("""
+SELECT 
+    userIdIndex, 
+    CAST(SUM(IF(page = 'Cancellation Confirmation', 1, 0)) >= 1 AS INT) AS label 
+FROM sparkify_events
+GROUP BY userIdIndex
+""")
+churn.write.mode("overwrite").parquet("/usr/local/airflow/spark-data/churn.parquet")
