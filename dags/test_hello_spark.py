@@ -1,14 +1,11 @@
 from airflow.models import DAG
 from airflow.operators.dummy_operator import DummyOperator
 from airflow.contrib.operators.spark_submit_operator import SparkSubmitOperator
-# from airflow.providers.apache.spark.operators.spark_submit import SparkSubmitOperator
-from airflow.operators.python import PythonOperator
+from airflow.sensors.filesystem import FileSensor
 from airflow.utils.dates import days_ago
-from pyspark.conf import SparkConf  
 
-spark_master = "spark://spark:7077"
 conf = {
-    "spark.master" : spark_master,
+    "spark.master" : "spark://spark:7077",
     # "spark.submit.deployMode" : "client",
     "spark.network.timeout" : "300s",
     # "spark.yarn.executor.memoryOverhead" : 600
@@ -45,6 +42,14 @@ with DAG(
         dag=dag
     )
 
+    waiting_for_file = FileSensor(
+        task_id="waiting_for_file",
+        poke_interval=30,
+        timeout=60 * 5,
+        mode="reschedule",
+        filepath="/usr/local/airflow/spark-data/sparkify_events.parquet"
+    )
+
     exploratory_data_analysis = SparkSubmitOperator(
         task_id="exploratory_data_analysis",
         application="/usr/local/spark/app/sparkify_2.py",
@@ -59,6 +64,7 @@ with DAG(
 
     start  >> \
     load_and_clean_dataset >> \
+    waiting_for_file >> \
     exploratory_data_analysis >> \
     end
     
