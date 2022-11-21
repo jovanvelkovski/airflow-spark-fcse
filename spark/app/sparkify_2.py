@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 
 plt.rcParams["figure.dpi"] = 140
 
-spark = SparkSession.builder.appName("Sparkify").getOrCreate()
+spark = SparkSession.builder.appName("Exploratory Data Analysis").getOrCreate()
 
 sparkify_events_data = "/usr/local/airflow/spark-data/sparkify_events.parquet"
 churn_data = "/usr/local/airflow/spark-data/churn.parquet"
@@ -13,8 +13,6 @@ churn = spark.read.parquet(churn_data)
 
 df.createOrReplaceTempView("sparkify_events")
 churn.createOrReplaceTempView("churn")
-
-churn_rate = churn.filter(churn.label == 1).count() / churn.count()
 
 date_ranges = spark.sql("""
 SELECT

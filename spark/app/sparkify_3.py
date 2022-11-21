@@ -18,7 +18,7 @@ from utils import (
     assembler,
 )
 
-spark = SparkSession.builder.appName("Sparkify").getOrCreate()
+spark = SparkSession.builder.appName("Feature Engineering").getOrCreate()
 
 sparkify_events_data = "/usr/local/airflow/spark-data/sparkify_events.parquet"
 last_week_data = "/usr/local/airflow/spark-data/last_week_events.parquet"
@@ -327,3 +327,6 @@ features = (
 # Assemble features dataframes
 no_lw_features = assembler(no_lw_features)
 features = assembler(features)
+
+no_lw_features.write.mode("overwrite").parquet("/usr/local/airflow/spark-data/no_lw_features.parquet")
+features.write.mode("overwrite").parquet("/usr/local/airflow/spark-data/features.parquet")

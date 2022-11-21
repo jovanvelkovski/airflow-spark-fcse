@@ -8,3 +8,5 @@ wtforms
 psycopg2-binary
 seaborn
 numpy
+sklearn
+scikit-learn

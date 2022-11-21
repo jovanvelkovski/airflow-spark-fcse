@@ -10,6 +10,8 @@ conf = {
     "spark.executor.memory" : "512m",
     "spark.driver.memory" : "512m",
     "spark.executor.memoryOverhead" : "1g",
+    "spark.executor.cores" : 1,
+    "spark.scheduler.mode" : "FAIR"
 }
 spark_app_name = "Spark Hello World"
 mini_sparkify_event_data = "/usr/local/spark/resources/data/mini_sparkify_event_data.json"
@@ -66,12 +68,58 @@ with DAG(
         dag=dag
     )
 
+    # modelling group
+    modelling_random_forest = SparkSubmitOperator(
+        task_id="modelling_random_forest",
+        application="/usr/local/spark/app/sparkify_4.py",
+        name=spark_app_name,
+        conn_id="spark_default",
+        verbose=1,
+        conf=conf,
+        dag=dag
+    )
+
+    modelling_logistic_regression = SparkSubmitOperator(
+        task_id="modelling_logistic_regression",
+        application="/usr/local/spark/app/sparkify_5.py",
+        name=spark_app_name,
+        conn_id="spark_default",
+        verbose=1,
+        conf=conf,
+        dag=dag
+    )
+
+    modelling_linear_svm = SparkSubmitOperator(
+        task_id="modelling_linear_svm",
+        application="/usr/local/spark/app/sparkify_6.py",
+        name=spark_app_name,
+        conn_id="spark_default",
+        verbose=1,
+        conf=conf,
+        dag=dag
+    )
+
+    
+    feature_engineering_done = DummyOperator(task_id="feature_engineering_done", dag=dag)
     end = DummyOperator(task_id="end", dag=dag)
+    temp_end = DummyOperator(task_id="temp_end", dag=dag)
 
     start  >> \
     load_and_clean_dataset >> \
     waiting_for_file >> \
     exploratory_data_analysis >> \
+    temp_end
+
+    waiting_for_file >> \
     feature_engineering >> \
+    feature_engineering_done >> \
+    modelling_random_forest >> \
+    end
+
+    feature_engineering_done >> \
+    modelling_logistic_regression >> \
     end
     
+    feature_engineering_done >> \
+    modelling_linear_svm >> \
+    end
