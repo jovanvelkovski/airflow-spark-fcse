@@ -1,27 +1,57 @@
-# docker-spark-fcse
+# Orchestration of processing tasks using Apache Airflow and Apache Spark
 
+Docker with Airflow + Postgres + Spark cluster + JDK (spark-submit support)
 
-1. Clone project
-- mkdir airflow-spark-fcse
-- cd airflow-spark-fcse
-- git clone https://github.com/jovanvelkovski/airflow-spark-fcse
+## 📦 Containers
 
-### NOTE: The settings are for MacOS. If you are using Windows, open "Dockerfile" located in the "airflow" directory, and change the code on line 100 to be: ENV JAVA_HOME /usr/lib/jvm/java-8-openjdk-amd64
+* **airflow-webserver**: Airflow webserver and scheduler, with spark-submit support.
+    * image: docker-airflow2:latest (Airflow version 2.4.1)
+        * Based on python:3.8, [pyjaime/docker-airflow-spark](https://github.com/pyjaime/docker-airflow-spark), [puckel/docker-airflow](https://github.com/puckel/docker-airflow) and [cordon-thiago/airflow-spark](https://github.com/cordon-thiago/airflow-spark/)
+    * port: 8080
 
-2. Build airflow docker
-- cd airflow-spark-fcse/airflow
-- docker build --rm -t docker-airflow2:latest .
+* **postgres**: Postgres database, used by Airflow.
+    * image: postgres:13.6
+    * port: 5432
 
-3. Launch containers
-- cd ..
-- docker-compose -f docker-compose.yml up -d
+* **spark-master**: Spark Master.
+    * image: bitnami/spark:3.3.1
+    * port: 8081
 
-4. Create a test user for airflow
-- docker-compose run airflow-webserver airflow users create --role Admin --username admin --email admin --firstname admin --lastname admin --password admin
+* **spark-worker[1]** and **spark-worker[2]**: Spark workers
+    * image: bitnami/spark:3.3.1
 
-5. Edit connection from Airflow to Spark
-Go to Airflow UI > Admin > Edit connections
-Edit spark_default entry:
-    Connection Type: Spark
-    Host: spark://spark
-    Port: 7077
+## 🛠 Setup
+
+### Clone project
+	
+	$ mkdir airflow-spark-fcse
+    $ cd airflow-spark-fcse
+    $ git clone https://github.com/jovanvelkovski/airflow-spark-fcse
+   
+### Build airflow Docker
+
+    $ cd airflow-spark-fcse/airflow
+    $ docker build --rm -t docker-airflow2:latest .
+
+### Launch containers
+
+    $ cd ..
+    $ docker-compose -f docker-compose.yml up -d
+
+### Check accesses
+
+* Airflow: http://localhost:8080
+* Spark Master: http://localhost:8081
+
+### Enable Airflow user
+  
+    $ docker-compose run airflow-webserver airflow users create --role Admin --username admin \
+      --email admin --firstname admin --lastname admin --password admin
+
+### Enable Spark connection
+
+* Go to Airflow UI > Admin > Edit connections
+* Edit spark_default entry:
+  * Connection Type: Spark
+  * Host: spark://spark
+  * Port: 7077 

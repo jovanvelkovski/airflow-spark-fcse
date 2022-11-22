@@ -1,11 +1,4 @@
-# AUTHOR: jovanvelkovski
-# DESCRIPTION: Airflow container with JAVA 8 and SPARK binaries
-# BUILD: docker build --rm -t docker-airflow2:latest .
-# BASED ON: https://github.com/pyjaime/docker-airflow-spark
-
-# stretch debian version allows JAVA JDK 8
 FROM python:3.8
-LABEL maintainer=jovanvelkovski
 
 # Never prompts the user for choices on installation/configuration of packages
 ENV DEBIAN_FRONTEND noninteractive

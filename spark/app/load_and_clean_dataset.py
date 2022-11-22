@@ -5,6 +5,7 @@ from pyspark.ml.feature import StringIndexer
 spark = SparkSession.builder.appName("Load and clean dataset").getOrCreate()
 
 mini_sparkify_event_data = "/usr/local/spark/resources/data/mini_sparkify_event_data.json"
+# sparkify_event_data = "/usr/local/spark/resources/data/sparkify_event_data.json"
 
 df = spark.read.json(mini_sparkify_event_data)
 df.createOrReplaceTempView("sparkify_events_raw")
