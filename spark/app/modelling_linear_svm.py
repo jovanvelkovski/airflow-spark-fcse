@@ -1,23 +1,19 @@
-
 import sys
 import pandas as pd
 import numpy as np
-
+import matplotlib.pyplot as plt
 from pyspark.sql import SparkSession
 from pyspark.sql import functions as F
-
 from pyspark.sql.types import DoubleType
-from sklearn.metrics import classification_report, confusion_matrix, ConfusionMatrixDisplay
-
-import matplotlib.pyplot as plt
+from sklearn.metrics import (
+    classification_report,
+    confusion_matrix,
+    ConfusionMatrixDisplay,
+)
+from utils import train_test_model
 
 plt.rcParams["figure.dpi"] = 140
 directory_path = sys.argv[1]
-
-if directory_path == "/usr/local/airflow/spark-data/training":
-    from utils_training import train_test_model
-else:
-    from utils_test import train_test_model
 
 spark = SparkSession.builder.appName("Modelling - Linear SVM").getOrCreate()
 
@@ -42,9 +38,7 @@ features = features.withColumn("weights", calc_weights("label"))
 
 # Train with weights
 (training, test) = features.randomSplit([0.75, 0.25], seed=42)
-model, prediction, fscore = train_test_model(
-    training, test, "Linear SVM", weights=True
-)
+model, prediction, fscore = train_test_model(training, test, "Linear SVM", weights=True)
 
 # Metrics
 pred = prediction.select("label", "prediction").toPandas()
@@ -66,7 +60,9 @@ plt.savefig(f"{directory_path}/chart11_LinearSVM_ConfMatrix.png")
 f_names = features.schema["features"].metadata["ml_attr"]["attrs"]["numeric"]
 f_names = [x["name"] for x in f_names]
 
-f_imp = pd.DataFrame(np.array(model.coefficients), index=f_names).sort_values(by=0, ascending=False)
+f_imp = pd.DataFrame(np.array(model.coefficients), index=f_names).sort_values(
+    by=0, ascending=False
+)
 f_imp
 
 f_imp = f_imp.abs().sort_values(by=0, ascending=False)

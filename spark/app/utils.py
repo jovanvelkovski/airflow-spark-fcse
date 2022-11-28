@@ -10,25 +10,26 @@ from pyspark.ml.classification import (
     LinearSVC,
 )
 from pyspark.ml.evaluation import MulticlassClassificationEvaluator
-from pyspark.sql import SparkSession
 
-spark = SparkSession.builder.appName("Utils").getOrCreate()
+# spark = SparkSession.builder.appName("Utils").getOrCreate()
 
-sparkify_events_data = "/usr/local/airflow/spark-data/test/sparkify_events.parquet"
-last_week_events_data = "/usr/local/airflow/spark-data/test/last_week_events.parquet"
-features_data = "/usr/local/airflow/spark-data/test/features.parquet"
+# sparkify_events_data = "/usr/local/airflow/spark-data/training/sparkify_events.parquet"
+# last_week_events_data = (
+#     "/usr/local/airflow/spark-data/training/last_week_events.parquet"
+# )
+# features_data = "/usr/local/airflow/spark-data/training/features.parquet"
 
-sparkify_events_df = spark.read.parquet(sparkify_events_data)
-last_week_df = spark.read.parquet(last_week_events_data)
+# sparkify_events_df = spark.read.parquet(sparkify_events_data)
+# last_week_df = spark.read.parquet(last_week_events_data)
 
-try:
-    features = spark.read.parquet(features_data)
-except:
-    features = spark.createDataFrame([], StructType([]))
+# try:
+#     features = spark.read.parquet(features_data)
+# except:
+#     features = spark.createDataFrame([], StructType([]))
 
-sparkify_events_df.createOrReplaceTempView("sparkify_events")
-last_week_df.createOrReplaceTempView("last_week_events")
-features.createOrReplaceTempView("features")
+# sparkify_events_df.createOrReplaceTempView("sparkify_events")
+# last_week_df.createOrReplaceTempView("last_week_events")
+# features.createOrReplaceTempView("features")
 
 
 def prefix_column(dataframe, prefix):
@@ -54,7 +55,7 @@ def prefix_column(dataframe, prefix):
 # Create an artist rating View for each user
 # For each user the rating is the number of songs played for that artist divided by the most song counts of an artist
 # Range between 0-1
-def create_ratings(table_name):
+def create_ratings(spark, table_name):
     """Create a ratings dataframe for a given table with events
 
     Args:
@@ -107,7 +108,7 @@ def get_als_features(ratings, factors, num_factors=20, output_col="vector"):
 
 ## Percentage of access for each page for each user
 # Remove Cancel and Cancellation Confirmation
-def create_page_percentage(table_name):
+def create_page_percentage(spark, table_name):
     """For each user calculate the percentage of a
     specific page interaction over all pages interactions.
 
@@ -134,7 +135,7 @@ def create_page_percentage(table_name):
 
 
 # Total page access
-def create_page_counts(table_name):
+def create_page_counts(spark, table_name):
     """Calculate the number of pages access for each user
 
     Remove page `Cancel` and `Cancellation Confirmation`
@@ -160,7 +161,7 @@ def create_page_counts(table_name):
 
 # Level percentage
 # Drop free (because paid = 1 - free, no necessity to have both as they are linearly dependent, thus highly correlated)
-def create_level_percentage(table_name):
+def create_level_percentage(spark, table_name):
     """Calculate the level percentage for each user by using the number of events
     that happened in each level
 
@@ -250,7 +251,9 @@ def train_test_model(training_set, test_set, classifier, weights=False):
     print(f"{classifier}: {fscore}")
 
     with open(
-        f"/usr/local/airflow/spark-data/test/{classifier} score", "w", encoding="utf-8"
+        f"/usr/local/airflow/spark-data/training/{classifier} score",
+        "w",
+        encoding="utf-8",
     ) as f:
         f.write(str(fscore))
 

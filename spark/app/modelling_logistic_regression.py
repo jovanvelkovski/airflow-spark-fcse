@@ -2,22 +2,15 @@
 import sys
 import pandas as pd
 import numpy as np
-
+import matplotlib.pyplot as plt
 from pyspark.sql import SparkSession
 from pyspark.sql import functions as F
-
 from pyspark.sql.types import DoubleType
 from sklearn.metrics import classification_report, confusion_matrix, ConfusionMatrixDisplay   
-
-import matplotlib.pyplot as plt
+from utils import train_test_model
 
 plt.rcParams["figure.dpi"] = 140
 directory_path = sys.argv[1]
-
-if directory_path == "/usr/local/airflow/spark-data/training":
-    from utils_training import train_test_model
-else:
-    from utils_test import train_test_model
 
 spark = SparkSession.builder.appName("Modelling - Logistic Regression").getOrCreate()
 

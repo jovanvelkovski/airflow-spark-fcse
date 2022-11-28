@@ -16,16 +16,19 @@ churn = spark.read.parquet(churn_data)
 df.createOrReplaceTempView("sparkify_events")
 churn.createOrReplaceTempView("churn")
 
-date_ranges = spark.sql("""
+date_ranges = spark.sql(
+    """
 SELECT
     MIN(date(registration_date)) AS min_registration_date, 
     MAX(date(registration_date)) AS max_registration_date,
     MIN(date(timestamp)) AS min_activity_date, 
     MAX(date(timestamp)) AS max_activity_date
 FROM sparkify_events
-""").toPandas()
+"""
+).toPandas()
 
-registration_date = spark.sql("""
+registration_date = spark.sql(
+    """
 SELECT registration, label, COUNT(userIdIndex) AS count FROM
 (
     SELECT 
@@ -44,7 +47,8 @@ SELECT registration, label, COUNT(userIdIndex) AS count FROM
         ON events.userIdIndex = churn.userIdIndex
 )
 GROUP BY registration, label
-""")
+"""
+)
 
 reg_df = registration_date.toPandas()
 reg_df = reg_df.pivot(index="registration", columns="label").fillna(0)
@@ -53,12 +57,15 @@ reg_df_cumsum = reg_df.cumsum()
 
 fig, axes = plt.subplots(figsize=(20, 8), nrows=1, ncols=2)
 
-reg_df.plot(ax = axes[0], xlabel = "Registration Date", ylabel = "User Count")
-reg_df_cumsum.plot(ax = axes[1], xlabel = "Registration Date", ylabel = "Cumulative User Count")
+reg_df.plot(ax=axes[0], xlabel="Registration Date", ylabel="User Count")
+reg_df_cumsum.plot(
+    ax=axes[1], xlabel="Registration Date", ylabel="Cumulative User Count"
+)
 plt.savefig(f"{directory_path}/chart1_UserCountByRegistrationDate.png")
 
 # Last Activity date
-last_activity_date = spark.sql("""
+last_activity_date = spark.sql(
+    """
 SELECT
     ts, 
     label, 
@@ -81,20 +88,24 @@ FROM
         ON events.userIdIndex = churn.userIdIndex
 )
 GROUP BY ts, label
-""")
+"""
+)
 
 lad_df = last_activity_date.toPandas()
-lad_df = lad_df.pivot(index = "ts", columns = "label").fillna(0)
+lad_df = lad_df.pivot(index="ts", columns="label").fillna(0)
 lad_df.columns = ["Not Cancelled", "Cancelled"]
 lad_df_cumsum = lad_df.cumsum()
 
-fig, axes = plt.subplots(figsize = (20, 8), nrows=1, ncols=2)
+fig, axes = plt.subplots(figsize=(20, 8), nrows=1, ncols=2)
 
-lad_df.plot(ax = axes[0], xlabel="Last Activity Date", ylabel="User Count")
-lad_df_cumsum.plot(ax = axes[1], xlabel="Last Activity Date", ylabel="Cumulative User Count")
+lad_df.plot(ax=axes[0], xlabel="Last Activity Date", ylabel="User Count")
+lad_df_cumsum.plot(
+    ax=axes[1], xlabel="Last Activity Date", ylabel="Cumulative User Count"
+)
 plt.savefig(f"{directory_path}/chart2_UserCountByLastActivityDate.png")
 
-mean_user_age = spark.sql("""
+mean_user_age = spark.sql(
+    """
 SELECT 
     ts, 
     label, 
@@ -119,14 +130,17 @@ SELECT
         ON events.userIdIndex = churn.userIdIndex
 )
 GROUP BY ts, label
-""")
+"""
+)
 
 mean_user_age_df = mean_user_age.toPandas()
 
 mua_df = mean_user_age_df.pivot(index="ts", columns="label", values="age").fillna(0)
 mua_df.columns = ["Not Cancelled", "Cancelled"]
 
-user_count_df = mean_user_age_df.pivot(index="ts", columns="label", values="users").fillna(0)
+user_count_df = mean_user_age_df.pivot(
+    index="ts", columns="label", values="users"
+).fillna(0)
 user_count_df.columns = ["Not Cancelled", "Cancelled"]
 
 fig, axes = plt.subplots(figsize=(20, 8), nrows=1, ncols=2)
@@ -135,7 +149,8 @@ mua_df.plot(ax=axes[0], xlabel="Activity Date", ylabel="Mean User Age")
 user_count_df.plot(ax=axes[1], xlabel="Activity Date", ylabel="User Count")
 plt.savefig(f"{directory_path}/chart3_MeanUserAgeByActivityDate.png")
 
-user_age = spark.sql("""
+user_age = spark.sql(
+    """
 SELECT events.userIdIndex, age, avg_age, label FROM 
 (
     SELECT userIdIndex, MAX(elapsed_days) AS age, AVG(elapsed_days) AS avg_age
@@ -143,7 +158,8 @@ SELECT events.userIdIndex, age, avg_age, label FROM
     GROUP BY userIdIndex
 ) AS events
 INNER JOIN churn ON churn.userIdIndex = events.userIdIndex
-""")
+"""
+)
 
 user_age_df = user_age.toPandas()
 
@@ -168,7 +184,8 @@ axes.set_ylabel("User Count")
 
 plt.savefig(f"{directory_path}/chart5_UserCountByUserMeanAge.png")
 
-song_played_per_user_per_day = spark.sql("""
+song_played_per_user_per_day = spark.sql(
+    """
 SELECT user_age_when_played, label, 
        COUNT(userIdIndex) AS users_count, 
        SUM(songs_played) AS songs_played, 
@@ -190,7 +207,8 @@ FROM
 ) AS table2
 GROUP BY label, user_age_when_played
 ORDER BY user_age_when_played, label
-""")
+"""
+)
 
 sppupd_df = song_played_per_user_per_day.toPandas()
 sppupd_df = sppupd_df.pivot(index="user_age_when_played", columns="label")
@@ -217,15 +235,36 @@ spi_df.columns = ["Not Cancelled", "Cancelled"]
 
 fig, axes = plt.subplots(figsize=(20, 16), nrows=2, ncols=2, sharex=True, sharey=True)
 
-asp_df.plot(ax=axes[0, 0], xlabel="Activity Date", ylabel="Songs Played", title="Avg Songs Played")
-ssp_df.plot(ax=axes[0, 1], xlabel="Activity Date", ylabel="Songs Played", title="Std Songs Played")
+asp_df.plot(
+    ax=axes[0, 0],
+    xlabel="Activity Date",
+    ylabel="Songs Played",
+    title="Avg Songs Played",
+)
+ssp_df.plot(
+    ax=axes[0, 1],
+    xlabel="Activity Date",
+    ylabel="Songs Played",
+    title="Std Songs Played",
+)
 
-asp_df.plot(ax=axes[1, 0], xlabel="Activity Date", ylabel="Page Interactions", title="Avg Page Interactions")
-ssp_df.plot(ax=axes[1, 1], xlabel="Activity Date", ylabel="Page Interactions", title="Std Page Interactions")
+asp_df.plot(
+    ax=axes[1, 0],
+    xlabel="Activity Date",
+    ylabel="Page Interactions",
+    title="Avg Page Interactions",
+)
+ssp_df.plot(
+    ax=axes[1, 1],
+    xlabel="Activity Date",
+    ylabel="Page Interactions",
+    title="Std Page Interactions",
+)
 
 plt.savefig(f"{directory_path}/chart7_SongsPlayedAndPageInteractionsByActivityDate.png")
 
-sessions = spark.sql("""
+sessions = spark.sql(
+    """
 SELECT activity_time, label,
        COUNT(sessionId) AS sessions, 
        AVG(interactions) AS interactions, 
@@ -243,7 +282,8 @@ FROM
 )
 GROUP BY activity_time, label
 ORDER BY activity_time, label
-""")
+"""
+)
 
 
 sessions_df = sessions.toPandas()
@@ -257,7 +297,17 @@ sst_df.columns = ["Not Cancelled", "Cancelled"]
 
 fig, axes = plt.subplots(figsize=(20, 8), nrows=1, ncols=2)
 
-si_df.plot(ax=axes[0], xlabel="Activity Day", ylabel="Mean Interactions", title="Mean Interactions per Activity Day")
-sst_df.plot(ax=axes[1], xlabel="Activity Day", ylabel="Mean Session Time (s)", title="Mean Session Time per Activity Day")
+si_df.plot(
+    ax=axes[0],
+    xlabel="Activity Day",
+    ylabel="Mean Interactions",
+    title="Mean Interactions per Activity Day",
+)
+sst_df.plot(
+    ax=axes[1],
+    xlabel="Activity Day",
+    ylabel="Mean Session Time (s)",
+    title="Mean Session Time per Activity Day",
+)
 
 plt.savefig(f"{directory_path}/chart8_InteractionsAndSessionTimeByActivityDay.png")

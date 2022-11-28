@@ -1,37 +1,21 @@
 import sys
 from pyspark.sql import SparkSession
 from pyspark.sql import functions as F
-
 from pyspark.ml.feature import OneHotEncoder
 from pyspark.ml.feature import StringIndexer
-
 from pyspark.ml.recommendation import ALS
-
 from pyspark.mllib.linalg.distributed import IndexedRowMatrix
+from utils import (
+    prefix_column,
+    create_ratings,
+    get_als_features,
+    create_page_percentage,
+    create_page_counts,
+    create_level_percentage,
+    assembler,
+)
 
 directory_path = sys.argv[1]
-
-if directory_path == "/usr/local/airflow/spark-data/training":
-    from utils_training import (
-        prefix_column,
-        create_ratings,
-        get_als_features,
-        create_page_percentage,
-        create_page_counts,
-        create_level_percentage,
-        assembler,
-    )
-else:
-    from utils_test import (
-        prefix_column,
-        create_ratings,
-        get_als_features,
-        create_page_percentage,
-        create_page_counts,
-        create_level_percentage,
-        assembler,
-    )
-
 spark = SparkSession.builder.appName("Feature Engineering").getOrCreate()
 
 sparkify_events_data = f"{directory_path}/sparkify_events.parquet"
@@ -47,8 +31,8 @@ last_week_df.createOrReplaceTempView("last_week_events")
 
 
 # Create ratings for both total and last week events
-create_ratings("sparkify_events")
-create_ratings("last_week_events")
+create_ratings(spark, "sparkify_events")
+create_ratings(spark, "last_week_events")
 
 # Get rating dataframe for whole dataset
 rating_df = spark.sql("SELECT * FROM sparkify_events_rating")
@@ -105,7 +89,7 @@ als_features_lw = get_als_features(
 
 # All events
 page_pct_all = (
-    create_page_percentage("sparkify_events")
+    create_page_percentage(spark, "sparkify_events")
     .groupBy("userIdIndex")
     .pivot("page")
     .sum("page_perct")
@@ -115,7 +99,7 @@ page_pct_all = prefix_column(page_pct_all, prefix="page_pct_all")
 
 # Last week events
 page_pct_lw = (
-    create_page_percentage("last_week_events")
+    create_page_percentage(spark, "last_week_events")
     .groupBy("userIdIndex")
     .pivot("page")
     .sum("page_perct")
@@ -125,7 +109,7 @@ page_pct_lw = prefix_column(page_pct_lw, prefix="page_pct_lw")
 
 # All events
 page_count_all = (
-    create_page_counts("sparkify_events")
+    create_page_counts(spark, "sparkify_events")
     .groupby("userIdIndex")
     .pivot("page")
     .sum("page_count")
@@ -135,7 +119,7 @@ page_count_all = prefix_column(page_count_all, prefix="page_count_all")
 
 # Last week events
 page_count_lw = (
-    create_page_counts("last_week_events")
+    create_page_counts(spark, "last_week_events")
     .groupby("userIdIndex")
     .pivot("page")
     .sum("page_count")
@@ -164,7 +148,7 @@ level = level.withColumnRenamed("l", "level")
 
 # All events
 level_pct_all = (
-    create_level_percentage("sparkify_events")
+    create_level_percentage(spark, "sparkify_events")
     .groupBy("userIdIndex")
     .pivot("level")
     .sum("level_perct")
@@ -175,7 +159,7 @@ level_pct_all = prefix_column(level_pct_all, prefix="level_pct_all")
 
 # Last week events
 level_pct_lw = (
-    create_level_percentage("last_week_events")
+    create_level_percentage(spark, "last_week_events")
     .groupBy("userIdIndex")
     .pivot("level")
     .sum("level_perct")
@@ -342,5 +326,7 @@ features = (
 no_lw_features = assembler(no_lw_features)
 features = assembler(features)
 
-no_lw_features.write.mode("overwrite").parquet(f"{directory_path}/no_lw_features.parquet")
+no_lw_features.write.mode("overwrite").parquet(
+    f"{directory_path}/no_lw_features.parquet"
+)
 features.write.mode("overwrite").parquet(f"{directory_path}/features.parquet")
