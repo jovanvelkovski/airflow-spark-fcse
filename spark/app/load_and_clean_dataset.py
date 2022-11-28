@@ -1,13 +1,14 @@
+import sys
 from pyspark.sql import SparkSession
 from pyspark.sql import functions as F
 from pyspark.ml.feature import StringIndexer
 
 spark = SparkSession.builder.appName("Load and clean dataset").getOrCreate()
 
-mini_sparkify_event_data = "/usr/local/spark/resources/data/mini_sparkify_event_data.json"
-# sparkify_event_data = "/usr/local/spark/resources/data/sparkify_event_data.json"
+sparkify_event_data = sys.argv[1]
+directory_path = sys.argv[2]
 
-df = spark.read.json(mini_sparkify_event_data)
+df = spark.read.json(sparkify_event_data)
 df.createOrReplaceTempView("sparkify_events_raw")
 
 df = spark.sql("""
@@ -49,7 +50,7 @@ df = df.withColumn("elapsed_days", F.round(df.elapsed/(24*60*60*1000), 0).cast("
 df = df.filter(df.elapsed_days >= 0)
 df.createOrReplaceTempView("sparkify_events")
 
-df.write.mode("overwrite").parquet("/usr/local/airflow/spark-data/sparkify_events.parquet")
+df.write.mode("overwrite").parquet(f"{directory_path}/sparkify_events.parquet")
 
 last_week_df = spark.sql("""
 WITH cte AS (
@@ -79,7 +80,7 @@ FROM cte
 WHERE ts >= max_ts - 7*24*60*60*1000
 """)
 
-last_week_df.write.mode("overwrite").parquet("/usr/local/airflow/spark-data/last_week_events.parquet")
+last_week_df.write.mode("overwrite").parquet(f"{directory_path}/last_week_events.parquet")
 
 churn = spark.sql("""
 SELECT 
@@ -88,4 +89,4 @@ SELECT
 FROM sparkify_events
 GROUP BY userIdIndex
 """)
-churn.write.mode("overwrite").parquet("/usr/local/airflow/spark-data/churn.parquet")
+churn.write.mode("overwrite").parquet(f"{directory_path}/churn.parquet")

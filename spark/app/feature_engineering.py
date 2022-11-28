@@ -1,3 +1,4 @@
+import sys
 from pyspark.sql import SparkSession
 from pyspark.sql import functions as F
 
@@ -8,21 +9,34 @@ from pyspark.ml.recommendation import ALS
 
 from pyspark.mllib.linalg.distributed import IndexedRowMatrix
 
-from utils import (
-    prefix_column,
-    create_ratings,
-    get_als_features,
-    create_page_percentage,
-    create_page_counts,
-    create_level_percentage,
-    assembler,
-)
+directory_path = sys.argv[1]
+
+if directory_path == "/usr/local/airflow/spark-data/training":
+    from utils_training import (
+        prefix_column,
+        create_ratings,
+        get_als_features,
+        create_page_percentage,
+        create_page_counts,
+        create_level_percentage,
+        assembler,
+    )
+else:
+    from utils_test import (
+        prefix_column,
+        create_ratings,
+        get_als_features,
+        create_page_percentage,
+        create_page_counts,
+        create_level_percentage,
+        assembler,
+    )
 
 spark = SparkSession.builder.appName("Feature Engineering").getOrCreate()
 
-sparkify_events_data = "/usr/local/airflow/spark-data/sparkify_events.parquet"
-last_week_data = "/usr/local/airflow/spark-data/last_week_events.parquet"
-churn_data = "/usr/local/airflow/spark-data/churn.parquet"
+sparkify_events_data = f"{directory_path}/sparkify_events.parquet"
+last_week_data = f"{directory_path}/last_week_events.parquet"
+churn_data = f"{directory_path}/churn.parquet"
 
 df = spark.read.parquet(sparkify_events_data)
 last_week_df = spark.read.parquet(last_week_data)
@@ -328,5 +342,5 @@ features = (
 no_lw_features = assembler(no_lw_features)
 features = assembler(features)
 
-no_lw_features.write.mode("overwrite").parquet("/usr/local/airflow/spark-data/no_lw_features.parquet")
-features.write.mode("overwrite").parquet("/usr/local/airflow/spark-data/features.parquet")
+no_lw_features.write.mode("overwrite").parquet(f"{directory_path}/no_lw_features.parquet")
+features.write.mode("overwrite").parquet(f"{directory_path}/features.parquet")

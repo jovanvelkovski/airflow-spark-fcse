@@ -1,4 +1,5 @@
 
+import sys
 import pandas as pd
 import numpy as np
 
@@ -6,19 +7,23 @@ from pyspark.sql import SparkSession
 from pyspark.sql import functions as F
 
 from pyspark.sql.types import DoubleType
-from sklearn.metrics import classification_report, confusion_matrix, ConfusionMatrixDisplay
+from sklearn.metrics import classification_report, confusion_matrix, ConfusionMatrixDisplay   
 
-from utils import train_test_model
 import matplotlib.pyplot as plt
 
 plt.rcParams["figure.dpi"] = 140
+directory_path = sys.argv[1]
 
+if directory_path == "/usr/local/airflow/spark-data/training":
+    from utils_training import train_test_model
+else:
+    from utils_test import train_test_model
 
 spark = SparkSession.builder.appName("Modelling - Logistic Regression").getOrCreate()
 
-no_lw_features_data = "/usr/local/airflow/spark-data/no_lw_features.parquet"
-churn_data = "/usr/local/airflow/spark-data/churn.parquet"
-features_data = "/usr/local/airflow/spark-data/features.parquet"
+no_lw_features_data = f"{directory_path}/no_lw_features.parquet"
+churn_data = f"{directory_path}/churn.parquet"
+features_data = f"{directory_path}/features.parquet"
 
 no_lw_features = spark.read.parquet(no_lw_features_data)
 churn = spark.read.parquet(churn_data)
@@ -55,7 +60,7 @@ cm = confusion_matrix(y_true, y_pred, labels=[0, 1], normalize="true")
 disp = ConfusionMatrixDisplay(cm, display_labels=["Not Cancelled", "Cancelled"])
 disp.plot(cmap=plt.cm.Blues)
 
-plt.savefig("/usr/local/airflow/spark-data/chart10_LogisticRegression_ConfMatrix.png")
+plt.savefig(f"{directory_path}/chart10_LogisticRegression_ConfMatrix.png")
 
 # Get feature coefficients for Logistic Regression
 f_names = features.schema["features"].metadata["ml_attr"]["attrs"]["numeric"]

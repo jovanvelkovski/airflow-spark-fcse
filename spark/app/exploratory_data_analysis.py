@@ -1,12 +1,14 @@
+import sys
 from pyspark.sql import SparkSession
 import matplotlib.pyplot as plt
 
 plt.rcParams["figure.dpi"] = 140
 
+directory_path = sys.argv[1]
 spark = SparkSession.builder.appName("Exploratory Data Analysis").getOrCreate()
 
-sparkify_events_data = "/usr/local/airflow/spark-data/sparkify_events.parquet"
-churn_data = "/usr/local/airflow/spark-data/churn.parquet"
+sparkify_events_data = f"{directory_path}/sparkify_events.parquet"
+churn_data = f"{directory_path}/churn.parquet"
 
 df = spark.read.parquet(sparkify_events_data)
 churn = spark.read.parquet(churn_data)
@@ -53,7 +55,7 @@ fig, axes = plt.subplots(figsize=(20, 8), nrows=1, ncols=2)
 
 reg_df.plot(ax = axes[0], xlabel = "Registration Date", ylabel = "User Count")
 reg_df_cumsum.plot(ax = axes[1], xlabel = "Registration Date", ylabel = "Cumulative User Count")
-plt.savefig("/usr/local/airflow/spark-data/chart1_UserCountByRegistrationDate.png")
+plt.savefig(f"{directory_path}/chart1_UserCountByRegistrationDate.png")
 
 # Last Activity date
 last_activity_date = spark.sql("""
@@ -90,7 +92,7 @@ fig, axes = plt.subplots(figsize = (20, 8), nrows=1, ncols=2)
 
 lad_df.plot(ax = axes[0], xlabel="Last Activity Date", ylabel="User Count")
 lad_df_cumsum.plot(ax = axes[1], xlabel="Last Activity Date", ylabel="Cumulative User Count")
-plt.savefig("/usr/local/airflow/spark-data/chart2_UserCountByLastActivityDate.png")
+plt.savefig(f"{directory_path}/chart2_UserCountByLastActivityDate.png")
 
 mean_user_age = spark.sql("""
 SELECT 
@@ -131,7 +133,7 @@ fig, axes = plt.subplots(figsize=(20, 8), nrows=1, ncols=2)
 
 mua_df.plot(ax=axes[0], xlabel="Activity Date", ylabel="Mean User Age")
 user_count_df.plot(ax=axes[1], xlabel="Activity Date", ylabel="User Count")
-plt.savefig("/usr/local/airflow/spark-data/chart3_MeanUserAgeByActivityDate.png")
+plt.savefig(f"{directory_path}/chart3_MeanUserAgeByActivityDate.png")
 
 user_age = spark.sql("""
 SELECT events.userIdIndex, age, avg_age, label FROM 
@@ -153,7 +155,7 @@ user_age_df.loc[user_age_df["label"] == 1, "age"].plot(ax=axes, kind="hist")
 axes.set_xlabel("User Age")
 axes.set_ylabel("User Count")
 
-plt.savefig("/usr/local/airflow/spark-data/chart4_UserCountByUserAge.png")
+plt.savefig(f"{directory_path}/chart4_UserCountByUserAge.png")
 
 
 fig, axes = plt.subplots(nrows=1, ncols=1, sharex=True, sharey=True)
@@ -164,7 +166,7 @@ user_age_df.loc[user_age_df["label"] == 1, "avg_age"].plot(ax=axes, kind="hist")
 axes.set_xlabel("User Mean Age")
 axes.set_ylabel("User Count")
 
-plt.savefig("/usr/local/airflow/spark-data/chart5_UserCountByUserMeanAge.png")
+plt.savefig(f"{directory_path}/chart5_UserCountByUserMeanAge.png")
 
 song_played_per_user_per_day = spark.sql("""
 SELECT user_age_when_played, label, 
@@ -199,7 +201,7 @@ uc.columns = ["Not Cancelled", "Cancelled"]
 plt.figure(figsize=(8, 6))
 uc.plot(xlabel="User Age When Event Happened", ylabel="User Count")
 
-plt.savefig("/usr/local/airflow/spark-data/chart6_UserAgeWhenAnEventHappened.png")
+plt.savefig(f"{directory_path}/chart6_UserAgeWhenAnEventHappened.png")
 
 asp_df = sppupd_df["avg_songs_played"].fillna(0)
 asp_df.columns = ["Not Cancelled", "Cancelled"]
@@ -221,7 +223,7 @@ ssp_df.plot(ax=axes[0, 1], xlabel="Activity Date", ylabel="Songs Played", title=
 asp_df.plot(ax=axes[1, 0], xlabel="Activity Date", ylabel="Page Interactions", title="Avg Page Interactions")
 ssp_df.plot(ax=axes[1, 1], xlabel="Activity Date", ylabel="Page Interactions", title="Std Page Interactions")
 
-plt.savefig("/usr/local/airflow/spark-data/chart7_SongsPlayedAndPageInteractionsByActivityDate.png")
+plt.savefig(f"{directory_path}/chart7_SongsPlayedAndPageInteractionsByActivityDate.png")
 
 sessions = spark.sql("""
 SELECT activity_time, label,
@@ -258,4 +260,4 @@ fig, axes = plt.subplots(figsize=(20, 8), nrows=1, ncols=2)
 si_df.plot(ax=axes[0], xlabel="Activity Day", ylabel="Mean Interactions", title="Mean Interactions per Activity Day")
 sst_df.plot(ax=axes[1], xlabel="Activity Day", ylabel="Mean Session Time (s)", title="Mean Session Time per Activity Day")
 
-plt.savefig("/usr/local/airflow/spark-data/chart8_InteractionsAndSessionTimeByActivityDay.png")
+plt.savefig(f"{directory_path}/chart8_InteractionsAndSessionTimeByActivityDay.png")
