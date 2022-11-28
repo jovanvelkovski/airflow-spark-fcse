@@ -8,18 +8,21 @@ from airflow.utils.task_group import TaskGroup
 
 
 conf = {
-    "spark.master" : "spark://spark:7077",
-    "spark.network.timeout" : "300s",
-    "spark.executor.memoryOverhead" : "1g",
-    "spark.executor.cores" : 1,
-    "spark.scheduler.mode" : "FAIR"
+    "spark.master": "spark://spark:7077",
+    "spark.network.timeout": "300s",
+    "spark.executor.memoryOverhead": "1g",
+    "spark.executor.cores": 1,
+    "spark.scheduler.mode": "FAIR",
 }
 spark_app_name = "Churn Analysis"
 args = {
-    'owner': 'Airflow',
+    "owner": "Airflow",
 }
-mini_sparkify_event_data = "/usr/local/spark/resources/data/mini_sparkify_event_data.json"
+mini_sparkify_event_data = (
+    "/usr/local/spark/resources/data/mini_sparkify_event_data.json"
+)
 directory_path = "/usr/local/airflow/spark-data/training"
+
 
 def _choose_best_model():
     with open(f"{directory_path}/Linear SVM score", "r") as f:
@@ -28,7 +31,7 @@ def _choose_best_model():
         lr_score = float(f.readline())
     with open(f"{directory_path}/Random Forest score", "r") as f:
         rf_score = float(f.readline())
-    
+
     best_model = "linear_svm"
     best_model_score = lsvm_score
     if lr_score > lsvm_score:
@@ -37,17 +40,17 @@ def _choose_best_model():
     if rf_score > best_model_score:
         best_model = "random_forest"
         best_model_score = rf_score
-    
+
     with open(f"{directory_path}/../best_model", "w") as f:
         f.write(best_model)
 
 
 with DAG(
-    dag_id='sparkify_churn_prediction_training',
+    dag_id="sparkify_churn_prediction_training",
     default_args=args,
     schedule_interval=None,
     start_date=days_ago(2),
-    tags=['test'],
+    tags=["test"],
 ) as dag:
 
     start = DummyOperator(task_id="start", dag=dag)
@@ -60,7 +63,7 @@ with DAG(
         verbose=1,
         conf=conf,
         application_args=[mini_sparkify_event_data, directory_path],
-        dag=dag
+        dag=dag,
     )
 
     check_dataset = FileSensor(
@@ -68,7 +71,7 @@ with DAG(
         poke_interval=30,
         timeout=60 * 5,
         mode="reschedule",
-        filepath=f"{directory_path}/sparkify_events.parquet"
+        filepath=f"{directory_path}/sparkify_events.parquet",
     )
 
     exploratory_data_analysis = SparkSubmitOperator(
@@ -79,7 +82,7 @@ with DAG(
         verbose=1,
         conf=conf,
         application_args=[directory_path],
-        dag=dag
+        dag=dag,
     )
 
     feature_engineering = SparkSubmitOperator(
@@ -90,7 +93,7 @@ with DAG(
         verbose=1,
         conf=conf,
         application_args=[directory_path],
-        dag=dag
+        dag=dag,
     )
 
     with TaskGroup(group_id="modelling") as modelling:
@@ -102,7 +105,7 @@ with DAG(
             verbose=1,
             conf=conf,
             application_args=[directory_path],
-            dag=dag
+            dag=dag,
         )
 
         modelling_logistic_regression = SparkSubmitOperator(
@@ -113,7 +116,7 @@ with DAG(
             verbose=1,
             conf=conf,
             application_args=[directory_path],
-            dag=dag
+            dag=dag,
         )
 
         modelling_linear_svm = SparkSubmitOperator(
@@ -124,7 +127,7 @@ with DAG(
             verbose=1,
             conf=conf,
             application_args=[directory_path],
-            dag=dag
+            dag=dag,
         )
 
     with TaskGroup(group_id="check_features") as check_features:
@@ -133,7 +136,7 @@ with DAG(
             poke_interval=30,
             timeout=60 * 5,
             mode="reschedule",
-            filepath=f"{directory_path}/no_lw_features.parquet"
+            filepath=f"{directory_path}/no_lw_features.parquet",
         )
 
         check_all_features = FileSensor(
@@ -141,7 +144,7 @@ with DAG(
             poke_interval=30,
             timeout=60 * 5,
             mode="reschedule",
-            filepath=f"{directory_path}/features.parquet"
+            filepath=f"{directory_path}/features.parquet",
         )
 
     with TaskGroup(group_id="check_insights") as check_insights:
@@ -150,7 +153,7 @@ with DAG(
             poke_interval=30,
             timeout=60 * 5,
             mode="reschedule",
-            filepath=f"{directory_path}/chart1_UserCountByRegistrationDate.png"
+            filepath=f"{directory_path}/chart1_UserCountByRegistrationDate.png",
         )
 
         check_user_count_by_last_activity_date = FileSensor(
@@ -158,7 +161,7 @@ with DAG(
             poke_interval=30,
             timeout=60 * 5,
             mode="reschedule",
-            filepath=f"{directory_path}/chart2_UserCountByLastActivityDate.png"
+            filepath=f"{directory_path}/chart2_UserCountByLastActivityDate.png",
         )
 
         check_mean_user_age_by_activity_date = FileSensor(
@@ -166,7 +169,7 @@ with DAG(
             poke_interval=30,
             timeout=60 * 5,
             mode="reschedule",
-            filepath=f"{directory_path}/chart3_MeanUserAgeByActivityDate.png"
+            filepath=f"{directory_path}/chart3_MeanUserAgeByActivityDate.png",
         )
 
         check_user_count_by_user_age = FileSensor(
@@ -174,7 +177,7 @@ with DAG(
             poke_interval=30,
             timeout=60 * 5,
             mode="reschedule",
-            filepath=f"{directory_path}/chart4_UserCountByUserAge.png"
+            filepath=f"{directory_path}/chart4_UserCountByUserAge.png",
         )
 
         check_user_count_by_user_mean_age = FileSensor(
@@ -182,7 +185,7 @@ with DAG(
             poke_interval=30,
             timeout=60 * 5,
             mode="reschedule",
-            filepath=f"{directory_path}/chart5_UserCountByUserMeanAge.png"
+            filepath=f"{directory_path}/chart5_UserCountByUserMeanAge.png",
         )
 
         check_user_age_when_an_event_happened = FileSensor(
@@ -190,7 +193,7 @@ with DAG(
             poke_interval=30,
             timeout=60 * 5,
             mode="reschedule",
-            filepath=f"{directory_path}/chart6_UserAgeWhenAnEventHappened.png"
+            filepath=f"{directory_path}/chart6_UserAgeWhenAnEventHappened.png",
         )
 
         check_songs_played_and_page_interactions_by_activity_date = FileSensor(
@@ -198,7 +201,7 @@ with DAG(
             poke_interval=30,
             timeout=60 * 5,
             mode="reschedule",
-            filepath=f"{directory_path}/chart7_SongsPlayedAndPageInteractionsByActivityDate.png"
+            filepath=f"{directory_path}/chart7_SongsPlayedAndPageInteractionsByActivityDate.png",
         )
 
         check_interactions_and_session_time_by_activity_day = FileSensor(
@@ -206,26 +209,28 @@ with DAG(
             poke_interval=30,
             timeout=60 * 5,
             mode="reschedule",
-            filepath=f"{directory_path}/chart8_InteractionsAndSessionTimeByActivityDay.png"
+            filepath=f"{directory_path}/chart8_InteractionsAndSessionTimeByActivityDay.png",
         )
 
-        
     choose_best_model = PythonOperator(
-        task_id="choose_best_model",
-        python_callable=_choose_best_model
+        task_id="choose_best_model", python_callable=_choose_best_model
     )
 
     end = DummyOperator(task_id="end", dag=dag)
-    
-    start  >> \
-    load_and_clean_dataset >> \
-    check_dataset >> \
-    exploratory_data_analysis >> \
-    check_insights
 
-    check_dataset >> \
-    feature_engineering >> \
-    check_features >> \
-    modelling >> \
-    choose_best_model >> \
-    end
+    (
+        start
+        >> load_and_clean_dataset
+        >> check_dataset
+        >> exploratory_data_analysis
+        >> check_insights
+    )
+
+    (
+        check_dataset
+        >> feature_engineering
+        >> check_features
+        >> modelling
+        >> choose_best_model
+        >> end
+    )
