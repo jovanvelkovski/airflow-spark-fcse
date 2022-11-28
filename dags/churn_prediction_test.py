@@ -6,7 +6,6 @@ from airflow.sensors.filesystem import FileSensor
 from airflow.utils.dates import days_ago
 from airflow.utils.task_group import TaskGroup
 
-
 conf = {
     "spark.master" : "spark://spark:7077",
     "spark.network.timeout" : "300s",
@@ -18,32 +17,14 @@ spark_app_name = "Churn Analysis"
 args = {
     'owner': 'Airflow',
 }
-mini_sparkify_event_data = "/usr/local/spark/resources/data/mini_sparkify_event_data.json"
-directory_path = "/usr/local/airflow/spark-data/training"
-
-def _choose_best_model():
-    with open(f"{directory_path}/Linear SVM score", "r") as f:
-        lsvm_score = float(f.readline())
-    with open(f"{directory_path}/Logistic Regression score", "r") as f:
-        lr_score = float(f.readline())
-    with open(f"{directory_path}/Random Forest score", "r") as f:
-        rf_score = float(f.readline())
-    
-    best_model = "linear_svm"
-    best_model_score = lsvm_score
-    if lr_score > lsvm_score:
-        best_model = "logistic_regression"
-        best_model_score = lr_score
-    if rf_score > best_model_score:
-        best_model = "random_forest"
-        best_model_score = rf_score
-    
-    with open(f"{directory_path}/../best_model", "w") as f:
-        f.write(best_model)
-
+sparkify_event_data = "/usr/local/spark/resources/data/sparkify_event_data.json"
+directory_path = "/usr/local/airflow/spark-data/test"
+sparkify_event_data = "/usr/local/spark/resources/data/sparkify_event_data.json"
+with open(f"{directory_path}/../best_model", "r") as f:
+    best_model = f.readline()
 
 with DAG(
-    dag_id='sparkify_churn_prediction_training',
+    dag_id='sparkify_churn_prediction_test',
     default_args=args,
     schedule_interval=None,
     start_date=days_ago(2),
@@ -59,7 +40,7 @@ with DAG(
         conn_id="spark_default",
         verbose=1,
         conf=conf,
-        application_args=[mini_sparkify_event_data, directory_path],
+        application_args=[sparkify_event_data, directory_path],
         dag=dag
     )
 
@@ -93,39 +74,16 @@ with DAG(
         dag=dag
     )
 
-    with TaskGroup(group_id="modelling") as modelling:
-        modelling_random_forest = SparkSubmitOperator(
-            task_id="modelling_random_forest",
-            application="/usr/local/spark/app/modelling_random_forest.py",
-            name=spark_app_name,
-            conn_id="spark_default",
-            verbose=1,
-            conf=conf,
-            application_args=[directory_path],
-            dag=dag
-        )
-
-        modelling_logistic_regression = SparkSubmitOperator(
-            task_id="modelling_logistic_regression",
-            application="/usr/local/spark/app/modelling_logistic_regression.py",
-            name=spark_app_name,
-            conn_id="spark_default",
-            verbose=1,
-            conf=conf,
-            application_args=[directory_path],
-            dag=dag
-        )
-
-        modelling_linear_svm = SparkSubmitOperator(
-            task_id="modelling_linear_svm",
-            application="/usr/local/spark/app/modelling_linear_svm.py",
-            name=spark_app_name,
-            conn_id="spark_default",
-            verbose=1,
-            conf=conf,
-            application_args=[directory_path],
-            dag=dag
-        )
+    predictions = SparkSubmitOperator(
+        task_id="predictions",
+        application=f"/usr/local/spark/app/modelling_{best_model}.py",
+        name=spark_app_name,
+        conn_id="spark_default",
+        verbose=1,
+        conf=conf,
+        application_args=[directory_path],
+        dag=dag
+    )
 
     with TaskGroup(group_id="check_features") as check_features:
         check_no_last_week_features = FileSensor(
@@ -209,12 +167,6 @@ with DAG(
             filepath=f"{directory_path}/chart8_InteractionsAndSessionTimeByActivityDay.png"
         )
 
-        
-    choose_best_model = PythonOperator(
-        task_id="choose_best_model",
-        python_callable=_choose_best_model
-    )
-
     end = DummyOperator(task_id="end", dag=dag)
     
     start  >> \
@@ -226,6 +178,5 @@ with DAG(
     check_dataset >> \
     feature_engineering >> \
     check_features >> \
-    modelling >> \
-    choose_best_model >> \
+    predictions >> \
     end
