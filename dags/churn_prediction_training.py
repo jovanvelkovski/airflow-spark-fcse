@@ -50,7 +50,7 @@ with DAG(
     default_args=args,
     schedule_interval=None,
     start_date=days_ago(2),
-    tags=["test"],
+    tags=["training"],
 ) as dag:
 
     start = DummyOperator(task_id="start", dag=dag)

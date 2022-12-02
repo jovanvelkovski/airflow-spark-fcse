@@ -36,11 +36,7 @@ Docker with Airflow + Postgres + Spark cluster + JDK (spark-submit support)
 ### Launch containers
 
     $ cd ..
-    $ docker-compose -f docker-compose.yml up -d
-    $ docker exec -it airflow-spark-fcse-spark-worker-1-1 /bin/bash
-    $ pip install numpy && exit
-    $ docker exec -it airflow-spark-fcse-spark-worker-2-1 /bin/bash
-    $ pip install numpy && exit
+    $ bash ./start.sh
 
 ### Check accesses
 
