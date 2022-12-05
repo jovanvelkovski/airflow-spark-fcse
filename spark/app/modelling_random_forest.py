@@ -27,7 +27,7 @@ features = spark.read.parquet(features_data)
 churn_rate = churn.filter(churn.label == 1).count() / churn.count()
 
 (training, test) = no_lw_features.randomSplit([0.75, 0.25], seed=42)
-train_test_model(training, test, "Random Forest")
+train_test_model(training, test, "Random Forest", directory=directory_path)
 
 # Weight by label ratio
 calc_weights = F.udf(
@@ -38,7 +38,7 @@ features = features.withColumn("weights", calc_weights("label"))
 # Train with weights
 (training, test) = features.randomSplit([0.75, 0.25], seed=42)
 model, prediction, fscore = train_test_model(
-    training, test, "Random Forest", weights=True
+    training, test, "Random Forest", weights=True, directory=directory_path
 )
 
 # Metrics

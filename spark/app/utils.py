@@ -11,27 +11,6 @@ from pyspark.ml.classification import (
 )
 from pyspark.ml.evaluation import MulticlassClassificationEvaluator
 
-# spark = SparkSession.builder.appName("Utils").getOrCreate()
-
-# sparkify_events_data = "/usr/local/airflow/spark-data/training/sparkify_events.parquet"
-# last_week_events_data = (
-#     "/usr/local/airflow/spark-data/training/last_week_events.parquet"
-# )
-# features_data = "/usr/local/airflow/spark-data/training/features.parquet"
-
-# sparkify_events_df = spark.read.parquet(sparkify_events_data)
-# last_week_df = spark.read.parquet(last_week_events_data)
-
-# try:
-#     features = spark.read.parquet(features_data)
-# except:
-#     features = spark.createDataFrame([], StructType([]))
-
-# sparkify_events_df.createOrReplaceTempView("sparkify_events")
-# last_week_df.createOrReplaceTempView("last_week_events")
-# features.createOrReplaceTempView("features")
-
-
 def prefix_column(dataframe, prefix):
     """Prefix the columns of a dataframe
 
@@ -203,7 +182,7 @@ def assembler(features_df):
     return features_df
 
 
-def train_test_model(training_set, test_set, classifier, weights=False):
+def train_test_model(training_set, test_set, classifier, weights=False, directory="/usr/local/airflow/spark-data/training"):
     """Train several models, predict, and show fscore for each
 
     Args:
@@ -251,7 +230,7 @@ def train_test_model(training_set, test_set, classifier, weights=False):
     print(f"{classifier}: {fscore}")
 
     with open(
-        f"/usr/local/airflow/spark-data/training/{classifier} score",
+        f"{directory}/{classifier} score",
         "w",
         encoding="utf-8",
     ) as f:
